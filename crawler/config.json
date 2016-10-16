@@ -1,0 +1,13 @@
+{
+	"links": [
+		{
+			"url": "http://www.the-village.ru/feeds/posts.atom?city=1&flow=new-place",
+			"type": "rss"
+		},
+		{
+			"url": "http://www.fontanka.ru/fontanka.rss",
+			"type": "rss"
+		}
+	],
+	"period": 600,
+}
