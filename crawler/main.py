@@ -4,10 +4,11 @@ import os
 import time
 from datetime import datetime
 import cPickle as pickle
-import psycopg2
+
 
 import rss_feed
 import vk_feed
+from db import Database
 
 
 MAX_FEED_COUNT = 1024
@@ -26,27 +27,16 @@ def create_parser():
     return parser
 
 
-# db = psycopg2.connect(database='raw_news', user='crawler')
-# inserter = db.cursor()
-# def put_into_db(text, date, source_url, article_url):
-    # inserter.execute("INSERT INTO news (text, publish_date, source_url, article_url) VALUES (%s, %s, %s, %s)",
-    #                  (text, date, source_url, article_url))
-
-
-def put_into_db(text, date, site_url, article_url):
-    print site_url, ":", article_url, ":", date
-
-
 loaders = {
     "rss": rss_feed.load,
     "vk":  vk_feed.load
 }
 
 
-def load(link):
+def load(db, link):
     typ = link["type"]
     link_url = link["url"]
-    count = 0
+    loaded_count = 0
 
     max_date = last_loaded_date[link_url] if link_url in last_loaded_date else datetime.fromtimestamp(0)
     for (text, date, url) in loaders[typ](link_url):
@@ -54,13 +44,13 @@ def load(link):
             break
 
         max_date = max(max_date, date)
-        put_into_db(text, date, link_url, url)
-        count += 1
-        if count == MAX_FEED_COUNT:
+        db.insert(text, date, link_url, url)
+        loaded_count += 1
+        if loaded_count == MAX_FEED_COUNT:
             break
 
     last_loaded_date[link_url] = max_date
-    print "loaded {} feeds for {}".format(count, link_url)
+    print "loaded {} feeds for {}".format(loaded_count, link_url)
 
 
 def main():
@@ -72,9 +62,13 @@ def main():
     with open(args.config, "r") as f:
         config = json.load(f)
 
+    if "db_config" not in config:
+        raise Exception("you should proved db config")
+
+    db = Database(config["db_config"])
     while True:
         for link in config["links"]:
-            load(link)
+            load(db, link)
 
         with open(LOADED_DATES_FILE, "wb") as f:
             pickle.dump(last_loaded_date, f)

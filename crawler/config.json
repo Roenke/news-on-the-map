@@ -9,5 +9,13 @@
 			"type": "vk"
 		}
 	],
-	"period": 1
+	"period": 1,
+
+	"db_config": {
+		"host": "192.168.1.37",
+		"port": 54320,
+		"user": "docker",
+		"password": "docker",
+		"database": "docker"
+	}
 }
