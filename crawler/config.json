@@ -5,9 +5,9 @@
 			"type": "rss"
 		},
 		{
-			"url": "http://www.fontanka.ru/fontanka.rss",
-			"type": "rss"
+			"url": "https://vk.com/villagespb",
+			"type": "vk"
 		}
 	],
-	"period": 600,
+	"period": 1
 }
