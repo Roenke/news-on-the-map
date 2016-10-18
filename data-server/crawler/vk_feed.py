@@ -12,6 +12,7 @@ def get_posts(group_id, offset):
         return api.wall.get(owner_id=-group_id, offset=offset, count=100)[1:]
     except Exception as e:
         print 'Error happened: ', e, str(type(e))
+    return []
 
 
 def load(url):

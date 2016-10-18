@@ -21,7 +21,10 @@ def load(url):
         date = convert_date(entry.published)
 
         article = Article(href, language="ru")
-        article.download()
-        article.parse()
+        try:
+            article.download()
+            article.parse()
+        except object:
+            raise StopIteration
 
         yield article.text, date, href
