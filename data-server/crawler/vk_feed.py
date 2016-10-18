@@ -1,11 +1,14 @@
 import vk
 from datetime import datetime
 
-
 VK_POST_URL = "https://vk.com/wall-{}_{}"
 
 session = vk.Session()
 api = vk.API(session)
+
+
+def get_posts(group_id, offset):
+    return api.wall.get(owner_id=-group_id, offset=offset, count=100)[1:]
 
 
 def load(url):
@@ -13,6 +16,12 @@ def load(url):
     group = api.groups.getById(group_id=group_name)[0]
 
     gid = group["gid"]
-    for post in api.wall.get(owner_id=-gid)[1:]:
-        date = datetime.fromtimestamp(post["date"])
-        yield post["text"], date, VK_POST_URL.format(gid, post["id"])
+    offset = 0
+    posts = get_posts(gid, offset)
+    while len(posts) > 0:
+        offset += len(posts)
+        for post in posts:
+            date = datetime.fromtimestamp(post["date"])
+            yield post["text"], date, VK_POST_URL.format(gid, post["id"])
+
+        posts = get_posts(gid, offset)
