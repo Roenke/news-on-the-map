@@ -1,9 +1,14 @@
 package com.spbau.news.on.the.map.sync;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbau.news.on.the.map.sync.config.DatabaseConfig;
 import com.spbau.news.on.the.map.sync.config.GlobalConfiguration;
+import com.spbau.news.on.the.map.sync.entity.ArticleBean;
+import com.spbau.news.on.the.map.sync.entity.LinksBean;
+import com.spbau.news.on.the.map.sync.entity.LocationBean;
+import com.spbau.news.on.the.map.sync.entity.PropertiesBean;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -11,10 +16,16 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.postgresql.geometric.PGpoint;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
 public class EntryPoint {
@@ -70,8 +81,60 @@ public class EntryPoint {
   }
 
   private void sync(TransportClient client, DatabaseConfig dbConfig) {
+    try {
+      Class.forName("org.postgresql.Driver");
+      ObjectMapper mapper = new ObjectMapper();
+      Connection connection = DriverManager
+          .getConnection(String.format("jdbc:postgresql://%s:%d/%s", dbConfig.getAddress(), dbConfig.getPort(),
+              dbConfig.getDatabase()), dbConfig.getUser(), dbConfig.getPassword());
+      final ResultSet resultSet = connection.createStatement().executeQuery(SELECT_READY_NEWS);
+      while (resultSet.next()) {
+        String sourceUrl = resultSet.getString("sourceUrl");
+        String articleUrl = resultSet.getString("articleUrl");
+        LinksBean links = new LinksBean(sourceUrl, articleUrl);
 
+        Date date = resultSet.getDate("publishDate");
+        int category = resultSet.getInt("category");
+        final PGpoint location = (PGpoint) resultSet.getObject("location");
+        LocationBean locationBean = new LocationBean((float) location.x, (float) location.y);
+
+        PropertiesBean properties = new PropertiesBean(locationBean, category, date);
+
+        int id = resultSet.getInt("id");
+        int rawId = resultSet.getInt("rawId");
+        int geoId = resultSet.getInt("geoId");
+
+        String content = resultSet.getString("content");
+        ArticleBean article = new ArticleBean(id, rawId, geoId, content, links, properties);
+        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(article);
+
+
+        client.prepareIndex("news", "article").setSource(json).get();
+        System.out.println("synchronized: " + System.lineSeparator() + json);
+      }
+    } catch (SQLException | JsonProcessingException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
   }
+
+  private static final String SELECT_READY_NEWS = "" +
+      "select \n" +
+      "\traw_news.id as rawId,\n" +
+      "    geo_news.id as geoId,\n" +
+      "    news.id as id,\n" +
+      "    raw_news.content_of_news as content,\n" +
+      "    raw_news.publish_date as publishDate,\n" +
+      "    raw_news.source_url as sourceUrl,\n" +
+      "    raw_news.article_url as articleUrl,\n" +
+      "    geo_news.coord as location,\n" +
+      "    news.category as category\n" +
+      "from news \n" +
+      "join geo_news\n" +
+      "on news.geo_news_id = geo_news.id\n" +
+      "join raw_news\n" +
+      "on geo_news.raw_news_id = raw_news.id";
 
   private static final String ARTICLE_MAPPING = "{\n" +
       "  \"article\": {\n" +
