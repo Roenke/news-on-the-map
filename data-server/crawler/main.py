@@ -1,15 +1,14 @@
 import argparse
+import cPickle as pickle
 import json
 import os
 import time
 from datetime import datetime
-import cPickle as pickle
-
 
 import rss_feed
 import vk_feed
-from db import Database
-
+from common.article import RawArticle
+from common.db import Database
 
 MAX_FEED_COUNT = 1024
 LOADED_DATES_FILE = ".loaded.pickle"
@@ -44,7 +43,7 @@ def load(db, link):
             break
 
         max_date = max(max_date, date)
-        db.insert(text, date, link_url, url)
+        db.insert_raw(RawArticle(text, date, link_url, url))
         loaded_count += 1
         if loaded_count == MAX_FEED_COUNT:
             break
