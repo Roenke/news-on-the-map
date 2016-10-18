@@ -5,6 +5,7 @@ import random
 
 from common.article import GeoArticle, GeoPoint
 from common.db import Database
+from common.util.config import check_config
 
 lat_min = 59.775757
 lat_max = 60.185233
@@ -40,10 +41,9 @@ def main():
     with open(args.db, "r") as f:
         db_config = json.load(f)
 
-    if "db_config" not in db_config:
-        raise Exception("you should proved db config")
+    check_config(db_config, args.db, 'host', 'port', 'user', 'password', 'database')
 
-    db = Database(db_config["db_config"])
+    db = Database(db_config)
     for raw_row in db.read_raw_without_geo():
         geo = get_geo(raw_row)
 

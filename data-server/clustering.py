@@ -5,6 +5,7 @@ import random
 
 from common.article import Article
 from common.db import Database
+from common.util.config import check_config
 
 PREVIEW_LINE_LEN = 100
 
@@ -32,10 +33,9 @@ def main():
     with open(args.db, "r") as f:
         db_config = json.load(f)
 
-    if "db_config" not in db_config:
-        raise Exception("you should proved db config")
+    check_config(db_config, args.db, 'host', 'port', 'user', 'password', 'database')
 
-    db = Database(db_config["db_config"])
+    db = Database(db_config)
     for geo in db.read_without_category():
         category = get_category(geo)
         article = Article(category, geo)
