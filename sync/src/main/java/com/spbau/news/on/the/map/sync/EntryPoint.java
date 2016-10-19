@@ -108,8 +108,7 @@ public class EntryPoint {
         ArticleBean article = new ArticleBean(id, rawId, geoId, content, links, properties);
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(article);
 
-
-        client.prepareIndex("news", "article").setSource(json).get();
+        client.prepareIndex("news", "article", String.valueOf(id)).setSource(json).get();
         System.out.println("synchronized: " + System.lineSeparator() + json);
       }
     } catch (SQLException | JsonProcessingException e) {
