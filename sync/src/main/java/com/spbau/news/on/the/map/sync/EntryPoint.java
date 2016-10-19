@@ -8,7 +8,6 @@ import com.spbau.news.on.the.map.sync.config.GlobalConfiguration;
 import com.spbau.news.on.the.map.sync.entity.ArticleBean;
 import com.spbau.news.on.the.map.sync.entity.LinksBean;
 import com.spbau.news.on.the.map.sync.entity.LocationBean;
-import com.spbau.news.on.the.map.sync.entity.PropertiesBean;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -93,19 +92,18 @@ public class EntryPoint {
         String articleUrl = resultSet.getString("articleUrl");
         LinksBean links = new LinksBean(sourceUrl, articleUrl);
 
-        Date date = resultSet.getDate("publishDate");
+        Date date = resultSet.getTimestamp("publishDate");
         int category = resultSet.getInt("category");
         final PGpoint location = (PGpoint) resultSet.getObject("location");
         LocationBean locationBean = new LocationBean((float) location.x, (float) location.y);
-
-        PropertiesBean properties = new PropertiesBean(locationBean, category, date);
 
         int id = resultSet.getInt("id");
         int rawId = resultSet.getInt("rawId");
         int geoId = resultSet.getInt("geoId");
 
         String content = resultSet.getString("content");
-        ArticleBean article = new ArticleBean(id, rawId, geoId, content, links, properties);
+        ArticleBean article = new ArticleBean(id, rawId, geoId, content, date,
+            links, locationBean, category);
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(article);
 
         client.prepareIndex("news", "article", String.valueOf(id)).setSource(json).get();
@@ -150,6 +148,16 @@ public class EntryPoint {
       "      \"content\": {\n" +
       "        \"type\": \"string\"\n" +
       "      },\n" +
+      "      \"location\": {\n" +
+      "        \"type\": \"geo_point\"\n" +
+      "      },\n" +
+      "      \"category\": {\n" +
+      "        \"type\": \"integer\"\n" +
+      "      },\n" +
+      "      \"publish_date\": {\n" +
+      "        \"type\": \"date\",\n" +
+      "        \"format\": \"epoch_millis\"\n" +
+      "      },\n" +
       "      \"links\": {\n" +
       "        \"type\": \"nested\",\n" +
       "        \"properties\": {\n" +
@@ -158,20 +166,6 @@ public class EntryPoint {
       "          },\n" +
       "          \"article_url\": {\n" +
       "            \"type\": \"string\"\n" +
-      "          }\n" +
-      "        }\n" +
-      "      },\n" +
-      "      \"properties\": {\n" +
-      "        \"type\": \"nested\",\n" +
-      "        \"properties\": {\n" +
-      "          \"location\": {\n" +
-      "            \"type\": \"geo_point\"\n" +
-      "          },\n" +
-      "          \"category\": {\n" +
-      "            \"type\": \"integer\"\n" +
-      "          },\n" +
-      "          \"publish_date\": {\n" +
-      "            \"type\": \"date\"\n" +
       "          }\n" +
       "        }\n" +
       "      }\n" +
