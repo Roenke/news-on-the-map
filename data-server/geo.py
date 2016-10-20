@@ -1,7 +1,10 @@
+# coding=utf-8
 import argparse
 import json
 import os
 import random
+import pymorphy2
+import requests
 
 from common.article import GeoArticle, GeoPoint
 from common.db import Database
@@ -22,11 +25,64 @@ def create_parser():
     return parser
 
 
-def get_geo(raw_article):
-    # TODO: use geo-coding services for raw_article
-    point = GeoPoint(random.uniform(lat_min, lat_max),
-                     random.uniform(lon_min, lon_max))
-    return GeoArticle(raw_article, point)
+def normalize_sentence(sentence):
+    return sentence.lower().replace(u'ё', u'е')
+
+
+def create_morph():
+    return pymorphy2.MorphAnalyzer()
+
+
+def create_street_set(street_file):
+    result = []
+    with open(street_file, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            result.append(normalize_sentence(line.decode('utf-8').rstrip('\n')))
+    return set(result)
+
+
+def get_geo(raw_article, street_set, morph):
+    def geocodeAddress(address):
+        lat_min = 59.775757
+        lat_max = 60.185233
+        lon_min = 29.505844
+        lon_max = 30.780945
+        url = 'https://geocode-maps.yandex.ru/1.x/'
+        bbox = format('%f,%f~%f,%f' % (lon_min, lat_min, lon_max, lat_max))
+        params = {'geocode': u'Санкт-Петербург, ' + address, 'bbox': bbox, 'rspn': 1, 'format': 'json'}
+        try:
+            r = requests.get(url, params=params)
+            try:
+                f = r.json()['response']['GeoObjectCollection']['featureMember']
+                if len(f) > 0:
+                    return f[0]['GeoObject']['Point']['pos']
+                else:
+                    return None
+            except KeyError:
+                print 'Wrong format of response %s' % r.json()
+        except Exception as e:
+            print 'Exception during geocoding', e
+            return None
+
+    def get_coord(text, street_set):
+        for w in text.split():
+            w = w.decode('utf-8')
+            w = morph.parse(w)[0].normal_form
+            w = normalize_sentence(w)
+            if w in street_set:
+                res = geocodeAddress(w)
+                if res is not None:
+                    print 'For word ', w, ' found coords', res
+                    res = res.split()
+                    return GeoPoint(float(res[1]), float(res[0]))
+        return None
+
+    point = get_coord(raw_article.content, street_set)
+    if point is not None:
+        return GeoArticle(raw_article, point)
+    else:
+        return None
 
 
 PREVIEW_LINE_LEN = 100
@@ -45,7 +101,7 @@ def main():
 
     db = Database(db_config)
     for raw_row in db.read_raw_without_geo():
-        geo = get_geo(raw_row)
+        geo = get_geo(raw_row, create_street_set('streets.txt'), create_morph())
 
         if geo is not None:
             raw_row.content.replace('\n', ' ')
