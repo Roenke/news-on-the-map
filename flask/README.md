@@ -13,6 +13,11 @@
 apt-get install sqlite3 python3 python3-flask python3-sqlalchemy && pip3 install flask-sqlalchemy sqlalchemy-migrate
 ```
 
+### Создание базы:
+```
+./db_create.py
+```
+
 ### Запуск:
 ```
 ./run.py
