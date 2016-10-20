@@ -1,0 +1,13 @@
+{
+  "elastic": {
+    "host": "localhost",
+    "port": 9300
+  },
+  "db": {
+    "host": "localhost",
+    "port": "54320",
+    "user": "docker",
+    "password": "docker",
+    "database": "docker"
+  }
+}
