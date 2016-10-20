@@ -6,7 +6,32 @@
 			"from_date": "19.10.2016"
 		},
 		{
+			"url": "https://news.yandex.ru/Saint_Petersburg/index.rss",
+			"type": "rss",
+			"from_date": "19.10.2016"
+		},
+		{
+			"url": "http://piterets.ru/rss.xml",
+			"type": "rss",
+			"from_date": "19.10.2016"
+		},
+		{
+			"url": "http://www.kommersant.ru/rss/regions/piter.xml",
+			"type": "rss",
+			"from_date": "19.10.2016"
+		},
+		{
+			"url": "http://www.fontanka.ru/fontanka.rss",
+			"type": "rss",
+			"from_date": "19.10.2016"
+		},
+		{
 			"url": "https://vk.com/villagespb",
+			"type": "vk",
+			"from_date": "19.10.2016"
+		},
+		{
+			"url": "https://vk.com/spb_today",
 			"type": "vk",
 			"from_date": "19.10.2016"
 		}
