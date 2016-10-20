@@ -1,0 +1,15 @@
+{
+	"links": [
+		{
+			"url": "http://www.the-village.ru/feeds/posts.atom?city=1&flow=new-place",
+			"type": "rss",
+			"from_date": "19.10.2016"
+		},
+		{
+			"url": "https://vk.com/villagespb",
+			"type": "vk",
+			"from_date": "19.10.2016"
+		}
+	],
+	"period": 1
+}
