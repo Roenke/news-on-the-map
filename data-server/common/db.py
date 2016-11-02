@@ -36,6 +36,21 @@ class Database(object):
             raw = RawArticle(row[1], row[2], row[3], row[4])
             yield IdentityRawArticle(row[0], raw)
 
+    def read_raw_data(self):
+        """Reads all raw news"""
+        query = """SELECT
+                        raw_news.id,
+                        raw_news.content_of_news,
+                        raw_news.publish_date,
+                        raw_news.source_url,
+                        raw_news.article_url
+                    FROM raw_news"""
+        cursor = self.db.cursor()
+        cursor.execute(query)
+        for row in cursor:
+            raw = RawArticle(row[1], row[2], row[3], row[4])
+            yield IdentityRawArticle(row[0], raw)
+
     def write_with_geo(self, geo_article):
         cursor = self.db.cursor()
         query = "INSERT INTO geo_news (raw_news_id, coord) " \
