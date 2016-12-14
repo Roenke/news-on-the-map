@@ -166,7 +166,7 @@ def get_geo(raw_article, street_set, important_words, morph):
         if res is not None:
             print 'For word ', w, ' found coords', res
             res = res.split()
-            yield GeoArticle(raw_article, GeoPoint(float(res[1]), float(res[0])))
+            yield GeoArticle(raw_article, GeoPoint(float(res[1]), float(res[0])), w)
         count += 1
 
     for w in get_capitalized(raw_article.content):
@@ -174,7 +174,7 @@ def get_geo(raw_article, street_set, important_words, morph):
         if res is not None:
             print 'For word ', w, ' found coords', res
             res = res.split()
-            yield GeoArticle(raw_article, GeoPoint(float(res[1]), float(res[0])))
+            yield GeoArticle(raw_article, GeoPoint(float(res[1]), float(res[0])), w)
         count += 1
 
     if count > 0:

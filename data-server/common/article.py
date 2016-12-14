@@ -20,9 +20,10 @@ class GeoPoint:
 
 
 class GeoArticle(IdentityRawArticle):
-    def __init__(self, raw, geo):
+    def __init__(self, raw, geo, geo_words):
         IdentityRawArticle.__init__(self, raw.raw_id, raw)
         self.geo = geo
+        self.geo_words = geo_words
 
 
 class IdentityGeoArticle(GeoArticle):
