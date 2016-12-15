@@ -36,10 +36,26 @@ class Database(object):
             raw = RawArticle(row[1], row[2], row[3], row[4])
             yield IdentityRawArticle(row[0], raw)
 
+    def read_raw_data(self):
+        """Reads all raw news"""
+        query = """SELECT
+                        raw_news.id,
+                        raw_news.content_of_news,
+                        raw_news.publish_date,
+                        raw_news.source_url,
+                        raw_news.article_url
+                    FROM raw_news"""
+        cursor = self.db.cursor()
+        cursor.execute(query)
+        for row in cursor:
+            raw = RawArticle(row[1], row[2], row[3], row[4])
+            yield IdentityRawArticle(row[0], raw)
+
     def write_with_geo(self, geo_article):
         cursor = self.db.cursor()
-        query = "INSERT INTO geo_news (raw_news_id, coord) " \
-                "VALUES (%s, POINT(%s, %s))" % (geo_article.raw_id, geo_article.geo.lat, geo_article.geo.lon)
+        query = "INSERT INTO geo_news (raw_news_id, coord, location_words) " \
+                "VALUES (%s, POINT(%s, %s), %s)" % (
+                    geo_article.raw_id, geo_article.geo.lat, geo_article.geo.lon, geo_article.geo_words)
         cursor.execute(query)
         self.db.commit()
 
@@ -51,19 +67,21 @@ class Database(object):
                         raw_news.source_url,
                         raw_news.article_url,
                         geo_news.id,
-                        geo_news.coord
+                        geo_news.coord,
+                        geo_news.location_words
                     FROM geo_news
                     LEFT OUTER JOIN news
                     ON geo_news.id = news.geo_news_id
                     JOIN raw_news
                     ON geo_news.raw_news_id = raw_news.id
                     WHERE news.id IS NULL"""
+
         cursor = self.db.cursor()
         cursor.execute(query)
         for row in cursor:
             raw = RawArticle(row[1], row[2], row[3], row[4])
             id_raw = IdentityRawArticle(row[0], raw)
-            geo = GeoArticle(id_raw, GeoPoint(*make_tuple(row[6])))
+            geo = GeoArticle(id_raw, GeoPoint(*make_tuple(row[6])), row[7])
             yield IdentityGeoArticle(row[5], geo)
 
     def write_with_category(self, article):

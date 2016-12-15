@@ -8,11 +8,12 @@
 - flask-sqlalchemy
 - sqlalchemy-migrate
 - flask-googlemaps
+- flask-wtf
 
 ### Установить все зависимости:
 ```
 apt-get install sqlite3 python3 python3-flask python3-sqlalchemy
-pip3 install flask-sqlalchemy sqlalchemy-migrate flask-googlemaps
+pip3 install flask-sqlalchemy sqlalchemy-migrate flask-googlemaps flask-wtf
 ```
 
 ### Создание базы:
