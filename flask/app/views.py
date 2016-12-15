@@ -62,13 +62,14 @@ def search_events(query_data, user):
     markers = [{
         'lat': e['_source']['location']['lat'],
         'lng': e['_source']['location']['lon'],
-        'infobox': '<h3>{5}{0}</h3><button onClick="like({3}, {4})">Мне нравится!</button><br><b>Подробнее: </b><a target="_blank" href="{1}">{1}</a><br><b>Источник: </b><a target="_blank" href="{2}">{2}</a>'.format(
+        'infobox': '<h3>{5}{0}</h3><button onClick="like({3}, {4})">Мне нравится!</button><br><b>Подробнее: </b><a target="_blank" href="{1}">{1}</a><br><b>Источник: </b><a target="_blank" href="{2}">{2}</a><br>Keywords: {6}'.format(
             e['_source']['content'][:content_maxlen] + ("" if len(e['_source']['content']) <= content_maxlen else "..."),
             e['_source']['links']['article_url'],
             e['_source']['links']['source_url'],
             e['_source']['id'],
             e['_source']['category'],
-            '<font color="red">*</font>' if fav_category == e['_source']['category'] else '')
+            '<font color="red">*</font>' if fav_category == e['_source']['category'] else '',
+            e['_source']['location_words'])
     } for e in json.loads(resp.read().decode())['hits']['hits']]
     markers.sort(key=lambda m: m['lat'])
     res = []
