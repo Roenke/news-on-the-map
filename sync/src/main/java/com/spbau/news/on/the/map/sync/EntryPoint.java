@@ -130,7 +130,7 @@ public class EntryPoint {
 
   private static int syncAllResultSet(TransportClient client, ResultSet records) throws SQLException, JsonProcessingException {
     int maxId = -1;
-    ObjectMapper mapper = new ObjectMapper();
+    final ObjectMapper mapper = new ObjectMapper();
     int count = 0;
     while (records.next()) {
       String sourceUrl = records.getString("sourceUrl");
@@ -147,7 +147,8 @@ public class EntryPoint {
       int geoId = records.getInt("geoId");
 
       String content = records.getString("content");
-      ArticleBean article = new ArticleBean(id, rawId, geoId, content, date,
+      String locationWords = records.getString("location_words");
+      ArticleBean article = new ArticleBean(id, rawId, geoId, content, locationWords, date,
           links, locationBean, category);
       String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(article);
 
@@ -179,6 +180,7 @@ public class EntryPoint {
       "    raw_news.source_url AS sourceUrl,\n" +
       "    raw_news.article_url AS articleUrl,\n" +
       "    geo_news.coord AS location,\n" +
+      "    geo_news.location_words AS location_words,\n" +
       "    news.category AS category\n" +
       "FROM news \n" +
       "JOIN geo_news\n" +
@@ -199,6 +201,9 @@ public class EntryPoint {
       "        \"type\": \"integer\"\n" +
       "      },\n" +
       "      \"content\": {\n" +
+      "        \"type\": \"string\"\n" +
+      "      },\n" +
+      "      \"location_words\": {\n" +
       "        \"type\": \"string\"\n" +
       "      },\n" +
       "      \"location\": {\n" +

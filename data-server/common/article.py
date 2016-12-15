@@ -27,14 +27,14 @@ class GeoArticle(IdentityRawArticle):
 
 
 class IdentityGeoArticle(GeoArticle):
-    def __init__(self, identity, geo_id):
-        GeoArticle.__init__(self, geo_id, geo_id.geo)
+    def __init__(self, identity, geo):
+        GeoArticle.__init__(self, geo, geo.geo, geo.geo_words)
         self.geo_id = identity
 
 
 class Article(IdentityGeoArticle):
-    def __init__(self, category, geo_id):
-        IdentityGeoArticle.__init__(self, geo_id.geo_id, geo_id)
+    def __init__(self, category, geo):
+        IdentityGeoArticle.__init__(self, geo.geo_id, geo)
         self.category = category
 
 

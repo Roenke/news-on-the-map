@@ -54,7 +54,7 @@ class Database(object):
     def write_with_geo(self, geo_article):
         cursor = self.db.cursor()
         query = "INSERT INTO geo_news (raw_news_id, coord, location_words) " \
-                "VALUES (%s, POINT(%s, %s), %s)" % (
+                "VALUES (%s, POINT(%s, %s), \'%s\')" % (
                     geo_article.raw_id, geo_article.geo.lat, geo_article.geo.lon, geo_article.geo_words)
         cursor.execute(query)
         self.db.commit()
