@@ -3,9 +3,10 @@ import argparse
 import json
 import os
 import re
+
+import itertools
 import pymorphy2
 import requests
-import string
 
 from common.article import GeoArticle, GeoPoint
 from common.db import Database
@@ -95,23 +96,6 @@ def get_geo(raw_article, street_set, important_words, morph):
             print 'Exception during geocoding', e
             return None
 
-    def get_coord(text):
-        for w in text.split():
-            w = get_norm_form(w.decode('utf-8'))
-            if w in street_set:
-                res = geocodeAddress(w)
-                if res is not None:
-                    print 'For word ', w, ' found coords', res
-                    res = res.split()
-                    return GeoPoint(float(res[1]), float(res[0]))
-        return None
-
-    def get_words(text):
-        result = []
-        for w in text.split():
-            result.append(get_norm_form(w.decode('utf-8')))
-        return result
-
     def get_pairs(text):
         regex.sub(' ', text)
         prev_word_in_set = False
@@ -154,28 +138,18 @@ def get_geo(raw_article, street_set, important_words, morph):
                             print 'Capitalized is ', words[i - 1], w, 'with norm', norm
                             yield norm
 
-    def get_bounded(text):
-        for (l, t, r) in re.findall(bounded_regex, text):
-            words = t.split()
-            if len(words) <= 3:
-                yield ' '.join(words)
-
     count = 0
-    for w in get_pairs(raw_article.content):
+    locations = dict()
+    for w in itertools.chain(get_pairs(raw_article.content), get_capitalized(raw_article.content)):
         res = geocodeAddress(w)
         if res is not None:
-            print 'For word ', w, ' found coords', res
             res = res.split()
-            yield GeoArticle(raw_article, GeoPoint(float(res[1]), float(res[0])), w)
-        count += 1
+            locations[w] = (float(res[1]), float(res[0]))
 
-    for w in get_capitalized(raw_article.content):
-        res = geocodeAddress(w)
-        if res is not None:
-            print 'For word ', w, ' found coords', res
-            res = res.split()
-            yield GeoArticle(raw_article, GeoPoint(float(res[1]), float(res[0])), w)
+    for (str_loc, loc) in locations.items():
+        (lat, lon) = loc
         count += 1
+        yield GeoArticle(raw_article, GeoPoint(lat, lon), str_loc)
 
     if count > 0:
         print 'Count of pairs is ', count
