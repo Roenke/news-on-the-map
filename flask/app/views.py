@@ -1,4 +1,4 @@
-from app import app, google
+from app import app, google, models, db
 from urllib.request import Request, urlopen, URLError
 
 import json
@@ -6,7 +6,7 @@ from flask.ext.wtf import Form
 from wtforms import TextField, SubmitField, DateField, validators
 from flask.ext.admin.form.widgets import DatePickerWidget
 
-from flask import render_template, session, request, url_for, redirect
+from flask import render_template, session, request, url_for, redirect, jsonify
 from flask_googlemaps import Map
 from flask.ext.wtf import Form
 from flask.ext.admin.form.widgets import DatePickerWidget
@@ -18,8 +18,20 @@ class SearchForm(Form):
     date_from = TextField('From')
     date_to = TextField('To')
 
-def search_events(query_data):
-    print("here8")
+def search_events(query_data, user):
+
+    likes = models.Likes.query.filter(models.Likes.user_email == user)
+
+    categories = dict()
+    for like in likes:
+        categories[like.category_id] = 1 + categories.get(like.category_id, 0)
+
+    fav_category = -1
+
+    for cat in categories:
+        if categories.get(fav_category, 0) < categories[cat]:
+            fav_category = cat
+
     url = app.config['ELASTIC_URL']
     content_maxlen = 150
     query_size = 10000
@@ -50,10 +62,13 @@ def search_events(query_data):
     markers = [{
         'lat': e['_source']['location']['lat'],
         'lng': e['_source']['location']['lon'],
-        'infobox': '<h3>{0}</h3><b>Подробнее: </b><a target="_blank" href="{1}">{1}</a><br><b>Источник: </b><a target="_blank" href="{2}">{2}</a>'.format(
+        'infobox': '<h3>{5}{0}</h3><button onClick="like({3}, {4})">Мне нравится!</button><br><b>Подробнее: </b><a target="_blank" href="{1}">{1}</a><br><b>Источник: </b><a target="_blank" href="{2}">{2}</a>'.format(
             e['_source']['content'][:content_maxlen] + ("" if len(e['_source']['content']) <= content_maxlen else "..."),
             e['_source']['links']['article_url'],
-            e['_source']['links']['source_url'])
+            e['_source']['links']['source_url'],
+            e['_source']['id'],
+            e['_source']['category'],
+            '<font color="red">*</font>' if fav_category == e['_source']['category'] else '')
     } for e in json.loads(resp.read().decode())['hits']['hits']]
     markers.sort(key=lambda m: m['lat'])
     res = []
@@ -64,6 +79,19 @@ def search_events(query_data):
             res.append(m)
     return res
 
+
+@app.route("/like")
+def like():
+    id = request.args.get('id', 0, type=int)
+    category = request.args.get('category', 0, type=int)
+    user = request.args.get('user', '', type=str)
+
+    if(user == ''): return
+
+    like = models.Likes(user_email=user, news_id = id, category_id = category)
+    db.session.add(like)
+    db.session.commit()
+    return jsonify(dummy=0)
 
 @app.route("/login")
 def login():
@@ -101,7 +129,7 @@ def index():
                 # Unauthorized - bad token
                 session.pop('access_token', None)
                 return redirect(url_for('login'))
-        user = json.loads(res.read().decode())['name']
+        user = json.loads(res.read().decode())
 
     if 'searchRect' not in session:
         session['searchRect'] = {
@@ -139,7 +167,7 @@ def index():
             query_data['to'] = form.date_to.data
         if form.data.data:
             query_data['query'] = form.data.data
-        markers = search_events(query_data)
+        markers = search_events(query_data, user['email'])
 
     mymap = Map(
         identifier="mymap",
@@ -156,4 +184,4 @@ def index():
         zoom=10,
         markers=markers,
     )
-    return render_template('index.html', mymap=mymap, form=form, searchRect=session['searchRect'], user=user)
+    return render_template('index.html', mymap=mymap, form=form, searchRect=session['searchRect'], authorized=(user is not None), user_email = None if user is None else user['email'], user_name = None if user is None else user['name'])

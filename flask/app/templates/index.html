@@ -29,7 +29,19 @@
                     document.getElementById("searchRect").value = JSON.stringify(bounds);
                 }
             }
+            $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+            function like(news_id, news_category) {
+                jQuery.getJSON($SCRIPT_ROOT + '/like', {
+                    id: news_id,
+                    category: news_category,
+                    {% if authorized %} user: "{{user_email}}" {% endif %}
+                });
+                return false;
+            };
         </script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="{{
+          url_for('static', filename='jquery.js') }}">\x3C/script>')</script>
 {% endblock %}
 {% block body %}
         <div>
@@ -44,11 +56,11 @@
                 <input id="rectCheckbox" name="rectCheckbox" type="checkbox" onclick="toggleRectangle()" onchange="toggleRectangle()" /> In Area
                 <input id="searchRect" name="searchRect" type="hidden" />
                 {{form.search}}
-                {% if user %}
-                    (Hello, {{user}})
+                {% if authorized %}
+                    (Hello, {{user_name}})
                 {% else %}
-                <a href="./login">
-                    <input type="button" value="Login via Google"/>
+                    <a href="./login">
+                        <input type="button" value="Login via Google"/>
                 </a>
                 {% endif %}
             </form>
