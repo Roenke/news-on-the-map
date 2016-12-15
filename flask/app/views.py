@@ -1,6 +1,10 @@
 from app import app, google
 from urllib.request import Request, urlopen, URLError
+
 import json
+from flask.ext.wtf import Form
+from wtforms import TextField, SubmitField, DateField, validators
+from flask.ext.admin.form.widgets import DatePickerWidget
 
 from flask import render_template, session, request, url_for, redirect
 from flask_googlemaps import Map
@@ -98,7 +102,6 @@ def index():
                 session.pop('access_token', None)
                 return redirect(url_for('login'))
         user = json.loads(res.read().decode())['name']
-
 
     if 'searchRect' not in session:
         session['searchRect'] = {
