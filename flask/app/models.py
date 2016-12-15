@@ -1,13 +1,15 @@
 from app import db
 
 
-class Events(db.Model):
+class Likes(db.Model):
+    __tablename__ = 'likes'
 
-    __tablename__ = 'events'
+    id = db.Column(db.Integer, primary_key = True)
+    user_email = db.Column(db.String(256))
+    news_id = db.Column(db.Integer)
+    category_id = db.Column(db.Integer)
 
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(64), index=True)
-    description = db.Column(db.Text)
-    date = db.Column(db.DateTime, index=True)
-    lat = db.Column(db.Float)
-    lng = db.Column(db.Float)
+    __table_args__ = (db.UniqueConstraint('user_email', 'news_id', name='uniq'),)
+
+    def __repr__(self):
+        return '<like from {} to {} with category {}'.format(self.user_email, self.news_id, self.category_id)
