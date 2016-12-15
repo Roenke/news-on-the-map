@@ -1,27 +1,20 @@
+from __future__ import print_function
+
 import argparse
 import json
 import os
-import random
+import pickle
 
-from common.article import Article
 from common.db import Database
 from common.util.config import check_config
-
-PREVIEW_LINE_LEN = 100
-
+from classifier import ArticleClassifier
 
 def create_parser():
     parser = argparse.ArgumentParser('')
-    parser.add_argument("--config", required=False, type=str,
-                        help="path to geo-coder config file")
     parser.add_argument("--db", required=True, type=str,
                         help="path to database config file")
 
     return parser
-
-
-def get_category(geo_article):
-    return int(random.uniform(1, 10))
 
 
 def main():
@@ -36,17 +29,16 @@ def main():
     check_config(db_config, args.db, 'host', 'port', 'user', 'password', 'database')
 
     db = Database(db_config)
+    articles = []
     for geo in db.read_without_category():
-        category = get_category(geo)
-        article = Article(category, geo)
+        articles.append(geo.content)
+        if len(articles) > 400:
+            break
 
-        geo.content.replace('\n', ' ')
-        preview = geo.content[:PREVIEW_LINE_LEN]
-        print "geo_id = %d, content = %s..., category = %d" \
-              % (geo.geo_id, preview, article.category)
-
-        db.write_with_category(article)
-
+    classifier = ArticleClassifier()
+    classifier.train(articles)
+    with open('kmeans.model', 'wb') as f:
+        pickle.dump(classifier, f)
 
 if __name__ == "__main__":
     main()
