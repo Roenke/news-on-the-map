@@ -1,5 +1,6 @@
 from app import app, google, models, db
 from urllib.request import Request, urlopen, URLError
+from datetime import datetime
 
 import json
 from flask.ext.wtf import Form
@@ -10,7 +11,6 @@ from flask import render_template, session, request, url_for, redirect, jsonify
 from flask_googlemaps import Map
 from flask.ext.wtf import Form
 from flask.ext.admin.form.widgets import DatePickerWidget
-from wtforms import TextField, SubmitField, DateField, validators
 
 class SearchForm(Form):
     data = TextField('search')
@@ -164,11 +164,12 @@ def index():
             query_data['bounds']['rb']['lat'] = r['south']
             query_data['bounds']['rb']['lng'] = r['east']
         if form.date_from.data and form.date_to.data:
-            query_data['from'] = form.date_from.data
-            query_data['to'] = form.date_to.data
+            epoch = datetime(1970,1,1)
+            query_data['from'] = int((datetime.strptime(form.date_from.data,'%d.%m.%Y') - epoch).total_seconds())
+            query_data['to'] = int((datetime.strptime(form.date_to.data,'%d.%m.%Y') - epoch).total_seconds())
         if form.data.data:
             query_data['query'] = form.data.data
-        markers = search_events(query_data, user['email'])
+        markers = search_events(query_data, user['email'] if user is not None else '')
 
     mymap = Map(
         identifier="mymap",
