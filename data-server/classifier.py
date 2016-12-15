@@ -29,7 +29,7 @@ class ArticleClassifier:
             int(explained_variance * 100)))
         self.km.fit(X)
 
-    def get_class(self, article):
-        X = self.vectorizer.fit_transform([article])
-        X = self.lsa.fit_transform(X)
+    def get_category(self, article):
+        X = self.vectorizer.transform([article])
+        X = self.lsa.transform(X)
         return self.km.predict(X)

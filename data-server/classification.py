@@ -9,7 +9,6 @@ import pickle
 
 PREVIEW_LINE_LEN = 100
 
-
 def create_parser():
     parser = argparse.ArgumentParser('')
     parser.add_argument("--config", required=False, type=str,
