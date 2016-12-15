@@ -10,6 +10,7 @@ public class ArticleBean {
   private final int myRawId;
   private final int myGeoId;
   private final String myContent;
+  private final String myLocationWords;
   private final Date myDate;
 
   private final LinksBean myLinks;
@@ -20,12 +21,14 @@ public class ArticleBean {
   @JsonCreator
   public ArticleBean(@JsonProperty("id") int id, @JsonProperty("raw_id") int rawId,
                      @JsonProperty("geo_id") int geoId, @JsonProperty("content") String content,
-                     @JsonProperty("publish_date") Date date, @JsonProperty("links") LinksBean links,
-                     @JsonProperty("location") LocationBean loc, @JsonProperty("category") int category) {
+                     @JsonProperty("location_words") String locationWords, @JsonProperty("publish_date") Date date,
+                     @JsonProperty("links") LinksBean links, @JsonProperty("location") LocationBean loc,
+                     @JsonProperty("category") int category) {
     myId = id;
     myGeoId = geoId;
     myRawId = rawId;
     myContent = content;
+    myLocationWords = locationWords;
 
     myDate = date;
     myLinks = links;
@@ -53,6 +56,11 @@ public class ArticleBean {
   @JsonProperty("content")
   public String getContent() {
     return myContent;
+  }
+
+  @JsonProperty("location_words")
+  public String getLocationWords() {
+    return myLocationWords;
   }
 
   @JsonProperty("links")
