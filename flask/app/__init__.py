@@ -2,7 +2,7 @@ from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask_googlemaps import GoogleMaps
 from flask_bootstrap import Bootstrap
-from flask_oauth import OAuth
+from .flask_oauth import OAuth
 
 
 app = Flask(__name__, template_folder='templates')
