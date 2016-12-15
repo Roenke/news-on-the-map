@@ -1,11 +1,12 @@
-from flask import render_template, session, request
-from flask_googlemaps import Map
-from app import app
-import urllib.request
+from app import app, google
+from urllib.request import Request, urlopen, URLError
 import json
+
+from flask import render_template, session, request, url_for, redirect
+from flask_googlemaps import Map
 from flask.ext.wtf import Form
-from wtforms import TextField, SubmitField, DateField, validators
 from flask.ext.admin.form.widgets import DatePickerWidget
+from wtforms import TextField, SubmitField, DateField, validators
 
 class SearchForm(Form):
     data = TextField('search')
@@ -40,8 +41,8 @@ def search_events(query_data):
         "size": query_size
     }
     print("Query is: ", query)
-    req = urllib.request.Request(url, json.dumps(query).encode('utf8'))
-    resp = urllib.request.urlopen(req, json.dumps(query).encode())
+    req = Request(url, json.dumps(query).encode('utf8'))
+    resp = urlopen(req, json.dumps(query).encode())
     markers = [{
         'lat': e['_source']['location']['lat'],
         'lng': e['_source']['location']['lon'],
@@ -60,12 +61,45 @@ def search_events(query_data):
     return res
 
 
-startlat = 60.0092659
-startlng = 30.353306
+@app.route("/login")
+def login():
+    callback = url_for('authorized', _external=True)
+    return google.authorize(callback=callback)
+
+@app.route("/authorized")
+@google.authorized_handler
+def authorized(resp):
+    access_token = resp['access_token']
+    session['access_token'] = access_token, ''
+    return redirect(url_for('index'))
+
+@google.tokengetter
+def get_access_token():
+    return session.get('access_token')
+
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/index", methods=['GET', 'POST'])
-def mapview():
+def index():
+    startlat = 60.0092659
+    startlng = 30.353306
+    user = None
+    access_token = session.get('access_token')
+    if access_token is not None:
+        access_token = access_token[0]
+        headers = {'Authorization': 'OAuth ' + access_token}
+        req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
+                      None, headers)
+        try:
+            res = urlopen(req)
+        except URLError as e:
+            if e.code == 401:
+                # Unauthorized - bad token
+                session.pop('access_token', None)
+                return redirect(url_for('login'))
+        user = json.loads(res.read().decode())['name']
+
+
     if 'searchRect' not in session:
         session['searchRect'] = {
             'north': startlat + 0.1,
@@ -91,24 +125,17 @@ def mapview():
         }
     }
     if form.validate_on_submit():
-        print("here1")
         if 'rectCheckbox' in request.form and request.form['rectCheckbox'] == "on":
-            print("here2")
             r = session['searchRect'] = json.loads(request.form['searchRect'])
             query_data['bounds']['tl']['lat'] = r['north']
             query_data['bounds']['tl']['lng'] = r['west']
             query_data['bounds']['rb']['lat'] = r['south']
             query_data['bounds']['rb']['lng'] = r['east']
-        print("here3")
         if form.date_from.data and form.date_to.data:
-            print("here4")
             query_data['from'] = form.date_from.data
             query_data['to'] = form.date_to.data
-        print("here5")
         if form.data.data:
-            print("here6")
             query_data['query'] = form.data.data
-        print("here7")
         markers = search_events(query_data)
 
     mymap = Map(
@@ -126,4 +153,4 @@ def mapview():
         zoom=10,
         markers=markers,
     )
-    return render_template('index.html', mymap=mymap, form=form, searchRect=session['searchRect'])
+    return render_template('index.html', mymap=mymap, form=form, searchRect=session['searchRect'], user=user)

@@ -44,7 +44,15 @@
                 <input id="rectCheckbox" name="rectCheckbox" type="checkbox" onclick="toggleRectangle()" onchange="toggleRectangle()" /> In Area
                 <input id="searchRect" name="searchRect" type="hidden" />
                 {{form.search}}
+                {% if user %}
+                    (Hello, {{user}})
+                {% else %}
+                <a href="./login">
+                    <input type="button" value="Login via Google"/>
+                </a>
+                {% endif %}
             </form>
+            
         </div>
         <div>
             {{mymap.html}}
